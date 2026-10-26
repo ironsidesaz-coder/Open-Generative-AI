@@ -2,12 +2,12 @@ const { ipcMain, app, BrowserWindow } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const https = require('https');
-const http = require('http');
 const { spawn, execFile } = require('child_process');
 const {
     getBundledBinaryResourceDir,
     pickBinaryAssetForPlatform,
 } = require('./localInferenceAssets');
+const { isAllowedDownloadUrl } = require('./safeUrl');
 const {
     formatStartupProgressMessage,
     parseGenerationProgressChunk,
@@ -78,8 +78,13 @@ function downloadFile(url, destPath, onProgress) {
         // Resume from however many bytes are already on disk
         const alreadyDownloaded = fs.existsSync(tmp) ? fs.statSync(tmp).size : 0;
 
+        if (!isAllowedDownloadUrl(requestUrl)) {
+            reject(new Error(`Refusing download from disallowed URL: ${requestUrl}`));
+            return;
+        }
+
         const parsed = new URL(requestUrl);
-        const mod = parsed.protocol === 'https:' ? https : http;
+        const mod = https;
 
         const reqHeaders = {
             'User-Agent': 'Mozilla/5.0 (compatible; open-generative-ai/1.0)',
@@ -91,11 +96,22 @@ function downloadFile(url, destPath, onProgress) {
         const req = mod.get({ hostname: parsed.hostname, path: parsed.pathname + parsed.search, headers: reqHeaders }, (res) => {
             const { statusCode, headers } = res;
 
-            // Follow redirects
+            // Follow redirects (HTTPS + public hosts only)
             if ([301, 302, 303, 307, 308].includes(statusCode)) {
                 res.resume();
                 if (redirectsLeft <= 0) { reject(new Error('Too many redirects')); return; }
-                resolve(attempt(headers.location, redirectsLeft - 1, retriesLeft));
+                let nextUrl;
+                try {
+                    nextUrl = new URL(headers.location, requestUrl).toString();
+                } catch {
+                    reject(new Error('Invalid redirect location'));
+                    return;
+                }
+                if (!isAllowedDownloadUrl(nextUrl)) {
+                    reject(new Error(`Refusing redirect to disallowed URL: ${nextUrl}`));
+                    return;
+                }
+                resolve(attempt(nextUrl, redirectsLeft - 1, retriesLeft));
                 return;
             }
 
@@ -151,12 +167,20 @@ function extractZip(zipPath, destDir) {
         let cmd, args;
         if (process.platform === 'win32') {
             cmd = 'powershell';
-            args = ['-NoProfile', '-Command', `Expand-Archive -Force -Path "${zipPath}" -DestinationPath "${destDir}"`];
+            args = [
+                '-NoProfile',
+                '-NonInteractive',
+                '-Command',
+                'Expand-Archive -Force -LiteralPath $env:OGAI_ZIP -DestinationPath $env:OGAI_DEST',
+            ];
         } else {
             cmd = 'unzip';
             args = ['-o', zipPath, '-d', destDir];
         }
-        execFile(cmd, args, (err) => {
+        const execOpts = process.platform === 'win32'
+            ? { env: { ...process.env, OGAI_ZIP: zipPath, OGAI_DEST: destDir } }
+            : undefined;
+        execFile(cmd, args, execOpts, (err) => {
             if (err) reject(err);
             else resolve();
         });
