@@ -116,8 +116,8 @@
   },
   "dependencies": {
     "ai-agent": "file:./packages/Open-Poe-AI/packages/agents",
-    "axios": "^1.7.0",
-    "next": "^15.0.0",
+    "axios": "^1.20.0",
+    "next": "^15.5.28",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hot-toast": "^2.4.1",
@@ -126,16 +126,43 @@
     "xtend": "^4.0.2"
   },
   "devDependencies": {
+    "@babel/core": "^7.29.7",
+    "@babel/plugin-transform-modules-systemjs": "^7.29.8",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/vite": "^4.1.18",
     "autoprefixer": "^10.4.24",
     "electron": "^33.4.11",
-    "electron-builder": "^25.1.8",
+    "electron-builder": "^26.18.1",
     "eslint": "^9",
-    "eslint-config-next": "^15.0.0",
-    "postcss": "^8.5.6",
+    "eslint-config-next": "^15.5.28",
+    "postcss": "^8.5.31",
     "tailwindcss": "^3.4.0",
-    "vite": "^5.4.0"
+    "vite": "^6.4.5"
+  },
+  "overrides": {
+    "axios": "^1.20.0",
+    "follow-redirects": "^1.16.2",
+    "form-data": "^4.0.6",
+    "nanoid": "^3.3.18",
+    "postcss": "^8.5.31",
+    "js-yaml": "^4.3.2",
+    "@xmldom/xmldom": "^0.9.12",
+    "tmp": "^0.2.6",
+    "http-cache-semantics": "^4.2.1",
+    "source-map-js": "^1.2.2",
+    "sharp": "0.35.5",
+    "browserslist": "^4.28.7",
+    "ip-address": "^10.7.4",
+    "@babel/core": "$@babel/core",
+    "@babel/plugin-transform-modules-systemjs": "$@babel/plugin-transform-modules-systemjs",
+    "baseline-browser-mapping": "^2.11.0",
+    "postcss-selector-parser": "6.1.5",
+    "prismjs": "1.30.0",
+    "brace-expansion@1": "1.1.21",
+    "brace-expansion@5": "5.0.12",
+    "refractor": {
+      "prismjs": "1.30.0"
+    }
   },
   "main": "electron/main.js"
 }

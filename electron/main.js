@@ -2,6 +2,7 @@ const { app, BrowserWindow, shell, dialog } = require('electron');
 const path = require('path');
 const { register: registerLocalInference } = require('./lib/localInference');
 const { register: registerWan2gp } = require('./lib/wan2gpProvider');
+const { isSafeExternalUrl } = require('./lib/safeUrl');
 
 process.on('uncaughtException', (err) => {
     console.error('Uncaught exception:', err);
@@ -35,6 +36,7 @@ function createWindow() {
             webSecurity: true,
             contextIsolation: true,
             nodeIntegration: false,
+            sandbox: true,
             preload: path.join(__dirname, 'preload.js'),
         },
         ...(isMac ? { titleBarStyle: 'hiddenInset' } : {}),
@@ -54,8 +56,20 @@ function createWindow() {
     });
 
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-        shell.openExternal(url);
+        if (isSafeExternalUrl(url)) {
+            shell.openExternal(url);
+        }
         return { action: 'deny' };
+    });
+
+    mainWindow.webContents.on('will-navigate', (event, url) => {
+        const current = mainWindow.webContents.getURL();
+        if (url === current) return;
+        if (url.startsWith('file:')) return;
+        event.preventDefault();
+        if (isSafeExternalUrl(url)) {
+            shell.openExternal(url);
+        }
     });
 
     mainWindow.once('ready-to-show', () => {

@@ -581,7 +581,7 @@ export default function StandaloneShell({ locale = 'en' }) {
       setApiKey(stored);
       fetchBalance(stored);
       // Sync cookie immediately on mount to establish identity for background requests
-      document.cookie = `muapi_key=${stored}; path=/; max-age=31536000; SameSite=Lax`;
+      document.cookie = `muapi_key=${stored}; path=/; max-age=31536000; SameSite=Lax${typeof location !== 'undefined' && location.protocol === 'https:' ? '; Secure' : ''}`;
     }
   }, [fetchBalance]);
 
@@ -589,7 +589,7 @@ export default function StandaloneShell({ locale = 'en' }) {
     localStorage.setItem(STORAGE_KEY, key);
     setApiKey(key);
     fetchBalance(key);
-    document.cookie = `muapi_key=${key}; path=/; max-age=31536000; SameSite=Lax`;
+    document.cookie = `muapi_key=${key}; path=/; max-age=31536000; SameSite=Lax${typeof location !== 'undefined' && location.protocol === 'https:' ? '; Secure' : ''}`;
   }, [fetchBalance]);
 
   const handleKeyChange = useCallback(() => {
